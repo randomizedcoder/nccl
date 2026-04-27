@@ -622,14 +622,14 @@ void ncclOsShmHandleInit(ncclShmDescriptor shmDesc, char* shmPath, size_t shmSiz
   handle->devShmPtr = dptr;
   handle->shmSize = shmSize;
   handle->realShmSize = realShmSize;
-  handle->refcount = (hptr != NULL) ? (int*)(hptr + shmSize) : NULL;
+  handle->refcount = (hptr != nullptr) ? reinterpret_cast<int*>(hptr + shmSize) : nullptr;
   if (create) {
     int slen = strlen(shmPath);
-    handle->shmPath = (char*)malloc(slen + 1);
+    handle->shmPath = static_cast<char*>(malloc(slen + 1));
     memcpy(handle->shmPath, shmPath, slen + 1);
     if (hptr) memset(hptr, 0, shmSize);
   } else {
-    handle->shmPath = NULL;
+    handle->shmPath = nullptr;
   }
 }
 
@@ -638,17 +638,17 @@ ncclResult_t ncclOsShmOpen(char* shmPath, size_t shmPathSize, size_t shmSize,
                            struct ncclShmHandleInternal** handle) {
   char errBuf[256];
   int fd = -1;
-  char* hptr = NULL;
-  void* dptr = NULL;
+  char* hptr = nullptr;
+  void* dptr = nullptr;
   ncclResult_t ret = ncclSuccess;
   struct ncclShmHandleInternal* tmphandle;
-  bool create = refcount > 0 ? true : false;
+  bool create = refcount > 0;
   const size_t refSize = sizeof(int);
   const size_t realShmSize = shmSize + refSize;
 
-  *handle = NULL;
-  *shmPtr = NULL;
-  EQCHECKGOTO(tmphandle = (struct ncclShmHandleInternal*)calloc(1, sizeof(struct ncclShmHandleInternal)), NULL, ret, fail);
+  *handle = nullptr;
+  *shmPtr = nullptr;
+  EQCHECKGOTO(tmphandle = static_cast<struct ncclShmHandleInternal*>(calloc(1, sizeof(struct ncclShmHandleInternal))), nullptr, ret, fail);
 
   if (create) {
     if (shmPath[0] == '\0') {
@@ -683,18 +683,18 @@ ncclResult_t ncclOsShmOpen(char* shmPath, size_t shmPathSize, size_t shmSize,
     SYSCHECKGOTO(fd = open(shmPath, O_RDWR, S_IRUSR | S_IWUSR), "open", ret, fail);
   }
 
-  hptr = (char*)mmap(NULL, realShmSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  hptr = static_cast<char*>(mmap(nullptr, realShmSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
   if (hptr == MAP_FAILED) {
     WARN("Error: Could not map %s size %zu, error: %s (%d)", shmPath, realShmSize, ncclStrerror(errno, errBuf, sizeof(errBuf)), errno);
     ret = ncclSystemError;
-    hptr = NULL;
+    hptr = nullptr;
     goto fail;
   }
 
   if (create) {
-    *(int*)(hptr + shmSize) = refcount;
+    *reinterpret_cast<int*>(hptr + shmSize) = refcount;
   } else {
-    int remref = ncclAtomicRefCountDecrement((int*)(hptr + shmSize));
+    int remref = ncclAtomicRefCountDecrement(reinterpret_cast<int*>(hptr + shmSize));
     if (remref == 0) {
       if (unlink(shmPath) != 0) {
         INFO(NCCL_ALLOC, "unlink shared memory %s failed, error: %s (%d)", shmPath, ncclStrerror(errno, errBuf, sizeof(errBuf)), errno);
