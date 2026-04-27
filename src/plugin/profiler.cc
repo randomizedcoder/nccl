@@ -196,7 +196,7 @@ static void printProfilerEventMask(int mask) {
   if (!mask) return;
 
   char enabled[512] = {0};
-  int pos = 0;
+  size_t pos = 0;
   if (mask & ncclProfileGroup)        pos += snprintf(enabled + pos, sizeof(enabled) - pos, "Group ");
   if (mask & ncclProfileColl)         pos += snprintf(enabled + pos, sizeof(enabled) - pos, "Coll ");
   if (mask & ncclProfileP2p)          pos += snprintf(enabled + pos, sizeof(enabled) - pos, "P2p ");
