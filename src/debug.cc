@@ -96,7 +96,8 @@ static void ncclDebugInit() {
     if (ncclDebugSubsysEnv[0] == '^') { invert = 1; ncclDebugSubsysEnv++; }
     tempNcclDebugMask = invert ? ~0ULL : 0ULL;
     char *ncclDebugSubsys = strdup(ncclDebugSubsysEnv);
-    char *subsys = strtok(ncclDebugSubsys, ",");
+    char *saveptr = NULL;
+    char *subsys = strtok_r(ncclDebugSubsys, ",", &saveptr);
     while (subsys != NULL) {
       uint64_t mask = 0;
       if (strcasecmp(subsys, "INIT") == 0) {
@@ -139,7 +140,7 @@ static void ncclDebugInit() {
       if (mask) {
         if (invert) tempNcclDebugMask &= ~mask; else tempNcclDebugMask |= mask;
       }
-      subsys = strtok(NULL, ",");
+      subsys = strtok_r(NULL, ",", &saveptr);
     }
     free(ncclDebugSubsys);
   }
@@ -162,7 +163,8 @@ static void ncclDebugInit() {
     if (timestamps[0] == '^') { invert = 1; ++timestamps; }
     ncclDebugTimestampLevels = invert ? ~0U : 0U;
     char *timestampsDup = strdup(timestamps);
-    char *level = strtok(timestampsDup, ",");
+    char *saveptr2 = NULL;
+    char *level = strtok_r(timestampsDup, ",", &saveptr2);
     while (level != NULL) {
       uint32_t mask = 0;
       if (strcasecmp(level, "ALL") == 0) {
@@ -184,7 +186,7 @@ static void ncclDebugInit() {
         if (invert) ncclDebugTimestampLevels &= ~mask;
         else ncclDebugTimestampLevels |= mask;
       }
-      level = strtok(NULL, ",");
+      level = strtok_r(NULL, ",", &saveptr2);
     }
     free(timestampsDup);
   }
