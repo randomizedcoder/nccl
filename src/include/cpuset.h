@@ -12,6 +12,8 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <sstream>
+#include <string>
 
 #ifdef NCCL_OS_LINUX
 #include <sched.h>
@@ -29,14 +31,11 @@ static ncclResult_t ncclStrToCpuset(const char* maskStr, ncclAffinity* set) {
 
   // transform the string into an array of 32 bit masks, starting with the highest mask
   int m = CPU_SET_N_U32;
-  char* str = strdup(maskStr);
-  char* saveptr = NULL;
-  char* token = strtok_r(str, ",", &saveptr);
-  while (token != NULL && m > 0) {
-    cpumasks[--m] = strtoul(token, NULL, /*base = hex*/ 16);
-    token = strtok_r(NULL, ",", &saveptr);
+  std::istringstream stream(maskStr);
+  std::string token;
+  while (std::getline(stream, token, ',') && m > 0) {
+    cpumasks[--m] = strtoul(token.c_str(), nullptr, /*base = hex*/ 16);
   }
-  free(str);
 
   // list all the CPUs as part of the CPU set, starting with the lowest mask (= current value of m)
   ncclOsCpuZero(*set);
@@ -77,16 +76,12 @@ static char* ncclCpusetToRangeStr(ncclAffinity* mask, char* str, size_t len) {
 static ncclResult_t ncclStrListToCpuset(const char* userStr, ncclAffinity* mask) {
   // reset the CPU set
   ncclOsCpuZero(*mask);
-  const char delim[] = ",";
-  char* str = strdup(userStr);
-  char* saveptr = NULL;
-  char* token = strtok_r(str, delim, &saveptr);
-  while (token != NULL) {
-    uint64_t cpu = strtoull(token, NULL, 0);
+  std::istringstream stream(userStr);
+  std::string token;
+  while (std::getline(stream, token, ',')) {
+    uint64_t cpu = strtoull(token.c_str(), nullptr, 0);
     ncclOsCpuSet(*mask, cpu);
-    token = strtok_r(NULL, delim, &saveptr);
   }
-  free(str);
   return ncclSuccess;
 }
 

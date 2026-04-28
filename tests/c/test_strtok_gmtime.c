@@ -62,17 +62,25 @@ int test_source_verified(void) {
   int all_ok = 1;
   char msg[512];
 
-  /* Check 1: plugin.c should use strtok_r (not strtok) */
-  const char *plugin_path = "../../plugins/tuner/example/plugin.c";
-  char *plugin_src = read_file(plugin_path);
+  /* Check 1: plugin source should not use thread-unsafe strtok.
+   * Try plugin.cc first (C++ modernization), fall back to plugin.c. */
+  const char *plugin_cc_path = "../../plugins/tuner/example/plugin.cc";
+  const char *plugin_c_path = "../../plugins/tuner/example/plugin.c";
+  char *plugin_src = read_file(plugin_cc_path);
+  const char *plugin_path = plugin_cc_path;
   if (!plugin_src) {
-    snprintf(msg, sizeof(msg), "Cannot read %s (run from tests/c/)", plugin_path);
+    plugin_src = read_file(plugin_c_path);
+    plugin_path = plugin_c_path;
+  }
+  if (!plugin_src) {
+    snprintf(msg, sizeof(msg), "Cannot read plugin source (run from tests/c/)");
     printf("  SKIP: %s - %s\n", __func__, msg);
     /* Don't fail if file not found — allows running outside repo */
   } else {
-    if (strstr(plugin_src, "strtok_r") == NULL) {
+    /* strstr("strtok(") matches bare strtok but NOT strtok_r (different char before paren) */
+    if (strstr(plugin_src, "strtok(") != NULL) {
       snprintf(msg, sizeof(msg),
-               "%s: still uses strtok (thread-unsafe) — expected strtok_r",
+               "%s: still uses strtok (thread-unsafe) — expected strtok_r or std::string",
                plugin_path);
       printf("  FAIL: %s - %s\n", __func__, msg);
       all_ok = 0;
