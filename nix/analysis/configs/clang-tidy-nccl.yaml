@@ -1,0 +1,63 @@
+# clang-tidy configuration for NCCL.
+#
+# Broad check set for maximum bug detection. Style/modernization checks
+# are included but can be filtered during triage.
+#
+# NCCL naming conventions (from CONTRIBUTING.md):
+#   Functions/variables: ncclCamelCase
+#   Macros: UPPER_CASE (e.g., NCCL_*, CUDA*)
+#   Types: ncclCamelCase_t (e.g., ncclComm_t, ncclResult_t)
+---
+Checks: >
+  bugprone-*,
+  cert-*,
+  clang-analyzer-*,
+  clang-diagnostic-switch,
+  clang-diagnostic-switch-enum,
+  concurrency-*,
+  cppcoreguidelines-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  security-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-sizeof-expression,
+  -cert-env33-c,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-owning-memory,
+  -misc-non-private-member-variables-in-classes,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity
+
+# Include NCCL project headers in analysis, exclude system/third-party headers
+HeaderFilterRegex: 'src/.*'
+
+WarningsAsErrors: ''
+
+# The clang-diagnostic-switch and clang-diagnostic-switch-enum checks
+# are enabled via the Checks list above.
+
+# Naming conventions aligned with NCCL style
+CheckOptions:
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: camelBack
+  - key: readability-identifier-naming.VariableCase
+    value: camelBack
+  - key: readability-identifier-naming.ParameterCase
+    value: camelBack
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
